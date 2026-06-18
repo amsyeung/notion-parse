@@ -1,4 +1,6 @@
 ./node_modules/
 node_modules
 
+kodaps-notion-parse-0.0.16.tgz
 
+.env

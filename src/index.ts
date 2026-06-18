@@ -97,8 +97,23 @@ const getFieldInfo = async (properties:{[key: string]: any}, name: string, conte
   switch (type) {
     case 'title':
       return element.title[0]?.plain_text;
-    case 'rich_text':
-      return element.rich_text[0]?.plain_text;
+    case 'rich_text': {
+      const texts = element.rich_text;
+      if (!texts.length) return null;
+
+      let mdStr = '';
+      for (const t of texts) {
+        let content = t.text.content;
+        if (t.annotations.bold) content = `**${content}**`;
+        if (t.annotations.italic) content = `*${content}*`;
+        if (t.annotations.underline) content = `<u>${content}</u>`;
+        if (t.annotations.strikethrough) content = `~~${content}~~`;
+        if (t.annotations.code) content = `\`${content}\``;
+
+        mdStr += content;
+      }
+      return mdStr;
+    }
     case 'date':
       return element.date?.start;
     case 'url':
@@ -118,7 +133,23 @@ const getFieldInfo = async (properties:{[key: string]: any}, name: string, conte
     case 'status':
       return element.status;
     case 'formula':
-      return element.formula.number;
+      const formula = element.formula;
+      if (formula.type === 'date') {
+        // formula.date format: "2026-06-15T08:51:45.123Z"
+        const d = new Date(formula.date.start);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hour = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        const sec = String(d.getSeconds()).padStart(2, '0');
+        return `${year}${month}${day}${hour}${min}${sec}`;
+      } else if (formula.type === 'number') {
+        return formula.number;
+      } else if (formula.type === 'string') {
+        return formula.string;
+      }
+      return null;
     case 'phone_number':
       return element.phone_number;
     case 'relation':
@@ -126,12 +157,20 @@ const getFieldInfo = async (properties:{[key: string]: any}, name: string, conte
     case 'multi_select':
       return element.multi_select.map((item: { name: any; }) => item.name);
     case 'files':
-
       let url = element.files[0]?.url || element.files[0]?.file?.url;
       if (!url) {
         return null;
       }
       return await manageImage(properties, url, contentType, element.files[0]?.name);
+    case 'people':
+      const users = element.people;
+      if (!Array.isArray(users) || users.length === 0) return null;
+      return users.map((user) => ({
+        id: user.id,
+        name: user.name,
+        avatar_url: user.avatar_url,
+        email: user.person?.email ?? null
+      }));
     default:
       throw new Error(`Unknown type ${type}`);
   }
@@ -198,10 +237,12 @@ const getDatabase = async (notion: Client, database_id: string, contentType: str
 
   while(hasMore) {
 
-    const request = await notion.databases.query({
-      database_id,
-      start_cursor: next_cursor || 'undefined',
-    });
+    const queryParams: any = { database_id };
+    if (next_cursor) {
+      queryParams.start_cursor = next_cursor;
+    }
+
+    const request = await notion.databases.query(queryParams);
 
     const results = request.results;
 
