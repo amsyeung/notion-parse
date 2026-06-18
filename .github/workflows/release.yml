@@ -1,0 +1,63 @@
+name: Build & Create Release with Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: Target git tag/branch to build
+        required: true
+        default: main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_ref || github.ref }}
+
+      - name: Setup Node.js v24 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        env:
+          MOTION_TOKEN: ${{ secrets.MOTION_TOKEN }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Create npm package with pnpm pack
+        run: pnpm pack
+
+      - name: Create GitHub Release & Upload package asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: notion-parse-*.tgz
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          overwrite: true
