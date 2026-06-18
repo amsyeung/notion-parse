@@ -89,4 +89,3 @@ NOTION_DATABASE_ID=${YOUR_DATABSE_ID}
 ## License
 
 MIT
-```
