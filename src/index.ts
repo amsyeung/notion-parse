@@ -11,81 +11,33 @@ const Jimp = require('jimp');
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-let notionClient: Client|null = null;
+// Global state management
+let notionClient: Client | null = null;
+let n2m: NotionToMarkdown | null = null;
 
-let n2m: NotionToMarkdown|null = null;
-
-const setNotionSecret = (auth: string) => {
-  notionClient = new Client({
-    auth,
-  });
-
-  n2m = new NotionToMarkdown({ notionClient });
-
-}
-
-
-
-const documentTypes = [];
-
-interface DocumentType {
+export interface DocumentType {
   databaseId: string;
   languageField?: string;
   contentType: string;
   filterFields?: Array<string>;
 }
 
-const addDocumentTypes = (types: Array<DocumentType>) => {
-  documentTypes.push(...types);
-}
+const documentTypes: DocumentType[] = [];
 
-
-const downloadImage = async (fileUrl: string, destination: string) => {
-
-  const src = destination; // `/images/${folder}/${name}`;
-
-  const file = './public' + src;
-
-  if (!fs.existsSync(file)) {
-    await wget(fileUrl, file); //element.properties.image.files[0].file.url, file);
-  }
-
-  let img = await Jimp.read(file);
-
-  const width = img.getWidth();
-  const height = img.getHeight();
-
-  return {
-    src,
-    width,
-    height,
-  };
-};
-
-
-const manageImage = async (properties:{[key: string]: any}, url: string, contentType: string, name?: string) => {
-
-  const title = await getFieldInfo(properties, 'title', contentType);
-
-  const slug = await getFieldInfo(properties, 'slug', contentType) || slugify(title, {
-    lower: true,
-    strict: true,
+export const setNotionSecret = (auth: string) => {
+  notionClient = new Client({
+    auth,
   });
 
-  if (!slug) {
-    throw new Error('No slug');
-  }
+  n2m = new NotionToMarkdown({ notionClient });
+};
 
-  checkFolder("./public" + getImageFolder(contentType));
+export const addDocumentTypes = (types: Array<DocumentType>) => {
+  documentTypes.push(...types);
+};
 
-  const destination: string = getImageFolder(contentType) + name;
-
-  return await downloadImage(url, destination);
-
-}
-
-
-const getFieldInfo = async (properties:{[key: string]: any}, name: string, contentType: string) => {
+// Helper functions for field processing
+const getFieldInfo = async (properties: { [key: string]: any }, name: string, contentType: string) => {
   const element = properties[name];
 
   if (!element) {
@@ -176,13 +128,57 @@ const getFieldInfo = async (properties:{[key: string]: any}, name: string, conte
   }
 };
 
-
-
 const toFrontMatter = (data: Object) => '---\n' + yaml.stringify(data) + '\n---\n';
 
+// Download image helper
+const downloadImage = async (fileUrl: string, destination: string) => {
+  const file = './public' + destination;
 
-function wget(url: string, dest: string): Promise<void> {
-  return new Promise((res) => {
+  if (!fs.existsSync(file)) {
+    await wget(fileUrl, file);
+  }
+
+  let img = await Jimp.read(file);
+
+  const width = img.getWidth();
+  const height = img.getHeight();
+
+  return {
+    src: destination,
+    width,
+    height,
+  };
+};
+
+// Image management helper
+const manageImage = async (properties: { [key: string]: any }, url: string, contentType: string, name?: string) => {
+  const title = await getFieldInfo(properties, 'title', contentType);
+
+  const slug = await getFieldInfo(properties, 'slug', contentType) || slugify(title, {
+    lower: true,
+    strict: true,
+  });
+
+  if (!slug) {
+    throw new Error('No slug');
+  }
+
+  checkFolder("./public" + getImageFolder(contentType));
+
+  const destination: string = getImageFolder(contentType) + name;
+
+  return await downloadImage(url, destination);
+};
+
+// File system helpers
+const checkFolder = (dir: string) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+};
+
+const wget = (url: string, dest: string): Promise<void> => {
+  return new Promise((resolve) => {
     http.get(url, (response: { statusCode: number; headers: { location: string; }; pipe: (arg0: any) => void; }) => {
       if (response.statusCode == 302) {
         // if the response is a redirection, we call again the method with the new location
@@ -195,23 +191,26 @@ function wget(url: string, dest: string): Promise<void> {
         response.pipe(file);
         file.on('finish', function () {
           file.close();
-          res();
+          resolve();
         });
       }
     });
   });
-}
+};
 
-
-export const parseNotionPage = async (page:PageObjectResponse| PartialPageObjectResponse | PartialDatabaseObjectResponse | DatabaseObjectResponse, contentType: string, debug = false ) => {
-  const obj:{[key:string]: any} = {
+// Parse Notion page to object
+export const parseNotionPage = async (
+  page: PageObjectResponse | PartialPageObjectResponse | PartialDatabaseObjectResponse | DatabaseObjectResponse,
+  contentType: string,
+  debug = false
+) => {
+  const obj: { [key: string]: any } = {
     notionId: page.id,
     type: contentType,
   };
 
   if ('properties' in page) {
     for (let field in (page.properties || {})) {
-
       const value = await getFieldInfo(page.properties, field, contentType);
       if (value !== null && value !== undefined && !obj[field]) {
         obj[field] = value;
@@ -222,21 +221,14 @@ export const parseNotionPage = async (page:PageObjectResponse| PartialPageObject
   return obj;
 };
 
-const checkFolder = (dir: string) => {
-  if (!fs.existsSync(dir)){
-    fs.mkdirSync(dir, { recursive: true });
-}
-}
-
+// Get database data with pagination
 const getDatabase = async (notion: Client, database_id: string, contentType: string, debug = false) => {
-
   let hasMore = true;
   let ret = [];
 
-  let next_cursor:string|undefined = undefined;
+  let next_cursor: string | undefined = undefined;
 
-  while(hasMore) {
-
+  while (hasMore) {
     const queryParams: any = { database_id };
     if (next_cursor) {
       queryParams.start_cursor = next_cursor;
@@ -262,8 +254,8 @@ const getDatabase = async (notion: Client, database_id: string, contentType: str
   return ret;
 };
 
-const saveFile = async (frontMatter: {[key: string]: any}, type: string, languageField?: string) => {
-
+// Save file with frontmatter and markdown content
+const saveFile = async (frontMatter: { [key: string]: any }, type: string, languageField?: string) => {
   if (!n2m) {
     throw new Error('Notion client not set');
   }
@@ -294,14 +286,13 @@ const saveFile = async (frontMatter: {[key: string]: any}, type: string, languag
 
   let images = [];
 
-  let imagePath =  getImageFolderPath(slug, type);
+  let imagePath = getImageFolderPath(slug, type);
 
-  console.log('checking imagePath ./public' + imagePath)
+  console.log('checking imagePath ./public' + imagePath);
 
   checkFolder('./public' + imagePath);
 
   for (let block of imageBlocks) {
-
     let data = block.replace('![', '').replace(']', '').replace(')', '').split('(');
 
     if (data.length !== 2) {
@@ -334,7 +325,6 @@ const saveFile = async (frontMatter: {[key: string]: any}, type: string, languag
     mdBody.parent = mdBody.parent.replace(image.url, image.src);
   }
 
-
   const newFile = getFilePath(slug, type, lang);
 
   try {
@@ -345,25 +335,24 @@ const saveFile = async (frontMatter: {[key: string]: any}, type: string, languag
   }
 };
 
-
-
-export const parseNotion = async (token: string, contentRoot: string, contentTypes: Array<DocumentType>, debug = false) => {
-
+// Main parsing function
+export const parseNotion = async (
+  token: string,
+  contentRoot: string,
+  contentTypes: Array<DocumentType>,
+  debug = false
+) => {
   console.log('Fetching data from Notion');
 
   setNotionSecret(token);
-
   setRootFolder(contentRoot);
-
   addDocumentTypes(contentTypes);
 
   if (!notionClient) {
-    throw new Error('Notion client incorretly setup');
+    throw new Error('Notion client incorrectly setup');
   }
 
-
   for (let type of contentTypes) {
-
     const databaseId = type.databaseId;
     const lang = type.languageField;
     const contentType = type.contentType || databaseId;
@@ -378,33 +367,25 @@ export const parseNotion = async (token: string, contentRoot: string, contentTyp
 
     console.log(`Fetching ${contentType} data`);
 
-
     const database = await getDatabase(notionClient, databaseId, contentType, debug);
 
     if (!database.length) {
       console.error(`Got ${database.length} items from ${contentType} database`);
     }
 
-    console.log("checking "+ contentRoot + '/' + contentType.toLowerCase());
+    console.log("checking " + contentRoot + '/' + contentType.toLowerCase());
     checkFolder(contentRoot + '/' + contentType.toLowerCase());
 
     for (let page of database) {
       sleep(400);
 
-      for(let field of (type.filterFields || [])) {
+      for (let field of (type.filterFields || [])) {
         if (page[field]) {
           delete page[field];
         }
       }
 
       await saveFile(page, contentType, lang);
-
     }
   }
-}
-
-
-
-
-
-
+};
