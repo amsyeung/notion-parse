@@ -1,6 +1,58 @@
-./node_modules/
-node_modules
+# Dependencies
+/node_modules
+/node_modules/**
+/node_modules/.bin
+/node_modules/.cache
 
-kodaps-notion-parse-0.0.16.tgz
+# Build artifacts
+/lib
+/lib/**
+/dist
+/dist/**
 
+# Environment files
 .env
+.env.local
+.env.*.local
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+*.log
+
+# System
+*.core
+
+# Coverage
+/coverage
+/coverage/**
+
+# Local config
+/local-config.js
+/local-config.json
+
+# Test files
+/test-results
+/test-results/**
+
+# Package lock files
+package-lock.json
+yarn.lock
+npm-debug.log

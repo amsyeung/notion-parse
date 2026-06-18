@@ -1,11 +1,10 @@
 {
-  "name": "@kodaps/notion-parse",
-  "version": "0.0.16",
+  "name": "@amsyn/notion-parse",
+  "version": "1.0.0",
   "description": "Convert Notion pages to Markdown with frontmatter",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "test": "test",
     "build": "tsc",
     "release": "release-it"
   },
@@ -14,11 +13,11 @@
     "notion",
     "frontmatter"
   ],
-  "author": "David Hockley",
+  "author": "Andy Yeung",
   "license": "MIT",
   "devDependencies": {
     "release-it": "^17.0.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.13",

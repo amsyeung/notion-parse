@@ -1,5 +1,4 @@
-
-let rootFolder: string|null = null;
+let rootFolder: string | null = null;
 
 export const setRootFolder = (folder: string) => {
   rootFolder = folder;
@@ -7,7 +6,6 @@ export const setRootFolder = (folder: string) => {
     rootFolder = rootFolder.slice(0, -1);
   }
 };
-
 
 export const getFileFolder = (filetype: string, lang?: string) => {
   const langBit = (!!lang) ? `${lang}/` : '';
@@ -19,7 +17,6 @@ export const getImageFolder = (filetype: string) => {
   const contentFolder = filetype.toLowerCase();
   return `/images/${contentFolder}/`;
 };
-
 
 export const getFilePath = (slug: string, filetype: string, lang?: string) => {
   const fileFolder = getFileFolder(filetype, lang);

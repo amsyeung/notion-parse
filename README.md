@@ -1,62 +1,91 @@
-# notion-parse
-An NPM module for downloading and Notion content and saving it as Markdown for NextJS. In short this takes the data from a page in a database and saves the data as FrontMatter and the content as Markdown. The second part is done by the excellent notion-to-md module.
+# Notion Parse
 
-I use this to download my Notion content and save it as Markdown for my NextJS blog. It's a work in progress, but it's working for me so far.
+An NPM module for downloading Notion content and saving it as Markdown with FrontMatter. This module takes data from Notion database pages and converts them into Markdown files with structured frontmatter.
 
-I also use ContentLayer to make sure my fontmatter has the right fields.
+## Installation
+
+```bash
+npm install @amsyn/notion-parse
+```
 
 ## Usage
 
-Here is how I use the module in my NextJS project.
+```javascript
+const NotionParse = require('@amsyn/notion-parse');
+require('dotenv').config();
 
-I have a .env file with the following variables :
-
-```.env
-NOTION_SECRET=secret_blablablablabla
-
-NOTION_PORTFOLIO_DATABASE_ID=18abababababababababba
-NOTION_NEWSLETTER_DATABASE_ID=19abababababababababba
-NOTION_POST_DATABASE_ID=20abababababababababba
-````
-
-I then have this script that I run to download the content from Notion and save it as Markdown :
-
-```js
-
-// @ts-check
-
-const NotionParse = require('@kodaps/notion-parse');
-const dotenv = require('dotenv');
-
-dotenv.config();
-
-const go = async () => {
-
-  if (process.env.NOTION_SECRET) {
-    await NotionParse.parseNotion(process.env.NOTION_SECRET, './src/content', [
-      {
-        databaseId: process.env.NOTION_PORTFOLIO_DATABASE_ID || '',
-        contentType: 'Portfolio'
-      },
-      {
-        databaseId: process.env.NOTION_POST_DATABASE_ID || '',
-        contentType: 'Post',
-        languageField: 'lang',
-        filterFields: [ 'translation', 'createdAt', 'status', 'Type']
-      },
-    ])
-  }
-
+// Global Notion sync configuration
+const NOTION_CONFIG = {
+  outputBaseDir: ".",
+  databases: [
+    {
+      envDbKey: "NOTION_DATABASE_ID",
+      contentType: "NOTION_DATABASE_NAME",
+    },
+  ],
 };
 
-go().then(() => {
-  console.log('Done');
-});
+// Main function to fetch and parse Notion database content
+async function parseNotionContent() {
+  const { NOTION_SECRET } = process.env;
+  // Validate Notion API secret key
+  if (!NOTION_SECRET) {
+    throw new Error("Environment variable NOTION_SECRET is missing, cannot connect to Notion API");
+  }
 
+  // Map configured databases with IDs loaded from environment variables
+  const databaseConfigs = NOTION_CONFIG.databases.map((db) => {
+    const databaseId = process.env[db.envDbKey];
+    if (!databaseId) {
+      throw new Error(`Environment variable ${db.envDbKey} is missing, skip this database`);
+    }
+    return {
+      databaseId,
+      contentType: db.contentType,
+    };
+  });
+
+  console.log("Start syncing Notion database content...");
+  await NotionParse.parseNotion(NOTION_SECRET, NOTION_CONFIG.outputBaseDir, databaseConfigs);
+  console.log("Notion database sync completed");
+}
+
+// Execute sync task and handle success/error logs
+parseNotionContent()
+  .then(() => console.log("✅ Notion database parsed successfully"))
+  .catch((err) => {
+    console.error("❌ Failed to sync Notion data:", err.message);
+  });
 ```
 
-This supposed several things :
-1. that the files are stored in a subfolder of the folder passed in as parameter (here `./src/content`) based on the content type
-2. that the ContentLayer type names map to the subfolders. So for instance for the `Post` content type, the files will be stored in `./src/content/post`
-3. that the Notion token and database IDs are stored in environment variables, and that there is one database per content type
-4. That the title of the content is stored in a 'title' field in Notion
+## Environment Variables
+
+```env
+NOTION_SECRET=${YOUR_NOTION_CONNECTIONS_ACCESS_TOKEN}
+NOTION_DATABASE_ID=${YOUR_DATABSE_ID}
+```
+
+> You can copy link in your notion database page to find `DATABASE_ID`
+> For example, 
+>   https://www.notion.so/23e31f81586120ba8478ead83604b567?v=23e31f81586120ba8478ead83604b567&source=copy_link
+>
+>   DATABASE_ID=23e31f81586120ba8478ead83604b567
+
+## Features
+
+- Converts Notion database pages to Markdown with frontmatter
+- Supports multiple content types
+- Handles image downloads and path management
+- Language-specific content support
+- Pagination for large databases
+- Compatible with ContentLayer2
+
+## Requirements
+
+- Node.js 20+
+- Notion API token
+- Database IDs for content types
+
+## License
+
+MIT
