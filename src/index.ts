@@ -3,11 +3,11 @@ import { DatabaseObjectResponse, PageObjectResponse, PartialDatabaseObjectRespon
 import { NotionToMarkdown } from "notion-to-md";
 import { getFileFolder, getFilePath, getImageFolder, getImageFolderPath, setRootFolder } from "./fileManagement";
 
-const yaml = require('yaml');
-const fs = require('fs');
-const http = require('https');
-const slugify = require('slugify');
-const Jimp = require('jimp');
+import * as yaml from 'yaml';
+import * as fs from 'fs';
+import * as https from 'https';
+import slugify from 'slugify';
+import Jimp from 'jimp';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -35,6 +35,21 @@ export const setNotionSecret = (auth: string) => {
 export const addDocumentTypes = (types: Array<DocumentType>) => {
   documentTypes.push(...types);
 };
+
+/**
+ * 單獨拉取 Page 評論（Comments 不屬於 page.properties，需獨立接口）
+ */
+async function fetchPageComments(pageId: string) {
+  if (!notionClient) return [];
+  try {
+    const res = await notionClient.comments.list({ block_id: pageId });
+    // 過濾已關閉 resolved 的評論，只保留開放留言
+    return res.results;
+  } catch (err) {
+    console.warn(`Failed to fetch comments for page ${pageId}`, err);
+    return [];
+  }
+}
 
 // Helper functions for field processing
 const getFieldInfo = async (properties: { [key: string]: any }, name: string, contentType: string) => {
@@ -83,11 +98,10 @@ const getFieldInfo = async (properties: { [key: string]: any }, name: string, co
     case 'email':
       return element.email;
     case 'status':
-      return element.status;
+      return element.status?.name ?? null;
     case 'formula':
       const formula = element.formula;
       if (formula.type === 'date') {
-        // formula.date format: "2026-06-15T08:51:45.123Z"
         const d = new Date(formula.date.start);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -178,23 +192,27 @@ const checkFolder = (dir: string) => {
 };
 
 const wget = (url: string, dest: string): Promise<void> => {
-  return new Promise((resolve) => {
-    http.get(url, (response: { statusCode: number; headers: { location: string; }; pipe: (arg0: any) => void; }) => {
-      if (response.statusCode == 302) {
-        // if the response is a redirection, we call again the method with the new location
-        console.log('redirecting to ', response.headers.location);
-        wget(String(response.headers.location), dest);
+  return new Promise((resolve, reject) => {
+    https.get(url, (response) => {
+      const statusCode = response.statusCode;
+      const location = response.headers.location;
+
+      if (statusCode === 302 && location) {
+        console.log('redirecting to ', location);
+        // 遞歸下載重定向連結
+        wget(String(location), dest)
+          .then(resolve)
+          .catch(reject);
       } else {
         console.log('Downloading', url, 'to', dest);
         const file = fs.createWriteStream(dest);
-
         response.pipe(file);
-        file.on('finish', function () {
+        file.on('finish', () => {
           file.close();
           resolve();
         });
       }
-    });
+    }).on('error', reject);
   });
 };
 
@@ -256,11 +274,15 @@ const getDatabase = async (notion: Client, database_id: string, contentType: str
 
 // Save file with frontmatter and markdown content
 const saveFile = async (frontMatter: { [key: string]: any }, type: string, languageField?: string) => {
-  if (!n2m) {
+  if (!n2m || !notionClient) {
     throw new Error('Notion client not set');
   }
 
   const notionId = frontMatter['notionId'];
+  // 新增：抓取該頁所有評論塞入 frontmatter
+  const comments = await fetchPageComments(notionId);
+  frontMatter.comments = comments;
+
   const lang = languageField ? frontMatter[languageField] : '';
 
   if (lang) {

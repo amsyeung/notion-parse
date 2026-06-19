@@ -56,3 +56,11 @@ Thumbs.db
 package-lock.json
 yarn.lock
 npm-debug.log
+
+# jest
+test-output/
+coverage/
+*.log
+
+# Pack tarball files
+*.tgz

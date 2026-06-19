@@ -1,11 +1,19 @@
 {
   "name": "@amsyn/notion-parse",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Convert Notion pages to Markdown with frontmatter",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/",
+    "package.json",
+    "README.md",
+    ".release-it.json"
+  ],
   "scripts": {
     "build": "tsc",
+    "test": "jest --verbose",
+    "test:watch": "jest --watch",
     "release": "release-it"
   },
   "keywords": [
@@ -16,7 +24,12 @@
   "author": "Andy Yeung",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.0.0",
+    "dotenv": "^17.4.2",
+    "jest": "^30.4.2",
     "release-it": "^17.0.0",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.9.3"
   },
   "dependencies": {
