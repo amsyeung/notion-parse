@@ -114,6 +114,8 @@ const getFieldInfo = async (properties: { [key: string]: any }, name: string, co
         return formula.number;
       } else if (formula.type === 'string') {
         return formula.string;
+      } else if (formula.type === 'boolean') {
+        return formula.boolean;
       }
       return null;
     case 'phone_number':
