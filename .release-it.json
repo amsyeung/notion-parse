@@ -1,11 +1,18 @@
 {
   "github": {
-    "release": true
+    "release": true,
+    "autoGenerate": true
   },
   "git": {
-    "commitMessage": "chore: release v${version}"
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "push": true
+  },
+  "npm": {
+    "publish": true
   },
   "hooks": {
+    "before:bump": "pnpm lint && pnpm test",
     "after:bump": "pnpm run build",
     "after:git:release": "echo After git push, before github release",
     "after:release": "echo Successfully released ${name} v${version} to ${repo.repository}."
