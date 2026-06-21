@@ -52,7 +52,7 @@ async function fetchPageComments(pageId: string) {
 }
 
 // Helper functions for field processing
-const getFieldInfo = async (properties: { [key: string]: any }, name: string, contentType: string) => {
+const getFieldInfo = async (properties: Record<string, any >, name: string, contentType: string) => {
   const element = properties[name];
 
   if (!element) {
@@ -125,7 +125,7 @@ const getFieldInfo = async (properties: { [key: string]: any }, name: string, co
     case 'multi_select':
       return element.multi_select.map((item: { name: any; }) => item.name);
     case 'files':
-      let url = element.files[0]?.url || element.files[0]?.file?.url;
+      const url = element.files[0]?.url || element.files[0]?.file?.url;
       if (!url) {
         return null;
       }
@@ -144,7 +144,7 @@ const getFieldInfo = async (properties: { [key: string]: any }, name: string, co
   }
 };
 
-const toFrontMatter = (data: Object) => '---\n' + yaml.stringify(data) + '\n---\n';
+const toFrontMatter = (data: object) => '---\n' + yaml.stringify(data) + '\n---\n';
 
 // Download image helper
 const downloadImage = async (fileUrl: string, destination: string) => {
@@ -154,7 +154,7 @@ const downloadImage = async (fileUrl: string, destination: string) => {
     await wget(fileUrl, file);
   }
 
-  let img = await Jimp.read(file);
+  const img = await Jimp.read(file);
 
   const width = img.getWidth();
   const height = img.getHeight();
@@ -230,7 +230,7 @@ export const parseNotionPage = async (
   };
 
   if ('properties' in page) {
-    for (let field in (page.properties || {})) {
+    for (const field in (page.properties || {})) {
       const value = await getFieldInfo(page.properties, field, contentType);
       if (value !== null && value !== undefined && !obj[field]) {
         obj[field] = value;
@@ -244,7 +244,7 @@ export const parseNotionPage = async (
 // Get database data with pagination
 const getDatabase = async (notion: Client, database_id: string, contentType: string, debug = false) => {
   let hasMore = true;
-  let ret = [];
+  const ret = [];
 
   let next_cursor: string | undefined = undefined;
 
@@ -265,8 +265,8 @@ const getDatabase = async (notion: Client, database_id: string, contentType: str
       console.log(`Got ${results.length} results from ${contentType} database`);
     }
 
-    for (let page of results) {
-      let item = await parseNotionPage(page, contentType, debug);
+    for (const page of results) {
+      const item = await parseNotionPage(page, contentType, debug);
       ret.push(item);
     }
   }
@@ -308,16 +308,16 @@ const saveFile = async (frontMatter: { [key: string]: any }, type: string, langu
 
   const imageBlocks = mdblocks.filter((block) => block.type === 'image').map((block) => block.parent);
 
-  let images = [];
+  const images = [];
 
-  let imagePath = getImageFolderPath(slug, type);
+  const imagePath = getImageFolderPath(slug, type);
 
   console.log('checking imagePath ./public' + imagePath);
 
   checkFolder('./public' + imagePath);
 
-  for (let block of imageBlocks) {
-    let data = block.replace('![', '').replace(']', '').replace(')', '').split('(');
+  for (const block of imageBlocks) {
+    const data = block.replace('![', '').replace(']', '').replace(')', '').split('(');
 
     if (data.length !== 2) {
       console.log('Error with image block: ', block);
@@ -345,7 +345,7 @@ const saveFile = async (frontMatter: { [key: string]: any }, type: string, langu
 
   const mdBody = n2m.toMarkdownString(mdblocks);
 
-  for (let image of images) {
+  for (const image of images) {
     mdBody.parent = mdBody.parent.replace(image.url, image.src);
   }
 
@@ -376,7 +376,7 @@ export const parseNotion = async (
     throw new Error('Notion client incorrectly setup');
   }
 
-  for (let type of contentTypes) {
+  for (const type of contentTypes) {
     const databaseId = type.databaseId;
     const lang = type.languageField;
     const contentType = type.contentType || databaseId;
@@ -400,10 +400,10 @@ export const parseNotion = async (
     console.log("checking " + contentRoot + '/' + contentType.toLowerCase());
     checkFolder(contentRoot + '/' + contentType.toLowerCase());
 
-    for (let page of database) {
+    for (const page of database) {
       sleep(400);
 
-      for (let field of (type.filterFields || [])) {
+      for (const field of (type.filterFields || [])) {
         if (page[field]) {
           delete page[field];
         }
