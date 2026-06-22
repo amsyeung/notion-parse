@@ -1,9 +1,10 @@
 name: Build & Create Release with Package
 
 on:
-  push:
-    tags:
-      - 'v*'
+  # (disabled, let release-it release)
+  # push:
+  #   tags:
+  #     - 'v*'
   workflow_dispatch:
     inputs:
       target_ref:
