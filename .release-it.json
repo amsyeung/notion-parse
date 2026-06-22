@@ -14,9 +14,10 @@
     }
   },
   "github": {
+    "tokenRef": "GITHUB_TOKEN_RELEASE_IT",
     "release": true,
     "releaseNotes": {
-      "commit": "* ${commit.subject} (${sha}){ - thanks @${author.login}!}",
+      "commit": "* ${commit.subject} (${sha}) { - thanks @${author.login}!}",
       "excludeMatches": ["amsyeung"]
     },
     "comments": {
@@ -24,11 +25,6 @@
       "issue": ":rocket: _This issue has been resolved in v${version}. See [${releaseName}](${releaseUrl}) for release notes._",
       "pr": ":rocket: _This pull request is included in v${version}. See [${releaseName}](${releaseUrl}) for release notes._"
     }
-  },
-  "git": {
-    "commitMessage": "chore: release v${version}",
-    "tagName": "v${version}",
-    "push": true
   },
   "npm": {
     "publish": true
