@@ -1,6 +1,6 @@
 {
   "name": "@amsyn/notion-parse",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "Convert Notion pages to Markdown with frontmatter",
   "main": "lib/index.js",
@@ -38,7 +38,7 @@
     "eslint-config-prettier": "^10.1.8",
     "jest": "^30.4.2",
     "prettier": "^3.8.4",
-    "release-it": "^17.0.0",
+    "release-it": "^20.2.0",
     "ts-jest": "^29.4.11",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.61.1"
