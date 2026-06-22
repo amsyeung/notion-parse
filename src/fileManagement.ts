@@ -8,7 +8,7 @@ export const setRootFolder = (folder: string) => {
 };
 
 export const getFileFolder = (filetype: string, lang?: string) => {
-  const langBit = (!!lang) ? `${lang}/` : '';
+  const langBit = !!lang ? `${lang}/` : '';
   const contentFolder = filetype.toLowerCase();
   return `${rootFolder}/${contentFolder}/${langBit}`;
 };

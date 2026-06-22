@@ -1,7 +1,18 @@
-import { Client } from "@notionhq/client";
-import { DatabaseObjectResponse, PageObjectResponse, PartialDatabaseObjectResponse, PartialPageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
-import { NotionToMarkdown } from "notion-to-md";
-import { getFileFolder, getFilePath, getImageFolder, getImageFolderPath, setRootFolder } from "./fileManagement";
+import { Client } from '@notionhq/client';
+import {
+  DatabaseObjectResponse,
+  PageObjectResponse,
+  PartialDatabaseObjectResponse,
+  PartialPageObjectResponse,
+} from '@notionhq/client/build/src/api-endpoints';
+import { NotionToMarkdown } from 'notion-to-md';
+import {
+  getFileFolder,
+  getFilePath,
+  getImageFolder,
+  getImageFolderPath,
+  setRootFolder,
+} from './fileManagement';
 
 import * as yaml from 'yaml';
 import * as fs from 'fs';
@@ -9,7 +20,7 @@ import * as https from 'https';
 import slugify from 'slugify';
 import Jimp from 'jimp';
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Global state management
 let notionClient: Client | null = null;
@@ -52,7 +63,7 @@ async function fetchPageComments(pageId: string) {
 }
 
 // Helper functions for field processing
-const getFieldInfo = async (properties: Record<string, any >, name: string, contentType: string) => {
+const getFieldInfo = async (properties: Record<string, any>, name: string, contentType: string) => {
   const element = properties[name];
 
   if (!element) {
@@ -121,9 +132,9 @@ const getFieldInfo = async (properties: Record<string, any >, name: string, cont
     case 'phone_number':
       return element.phone_number;
     case 'relation':
-      return element.relation.map((item: { id: any; }) => item.id);
+      return element.relation.map((item: { id: any }) => item.id);
     case 'multi_select':
-      return element.multi_select.map((item: { name: any; }) => item.name);
+      return element.multi_select.map((item: { name: any }) => item.name);
     case 'files':
       const url = element.files[0]?.url || element.files[0]?.file?.url;
       if (!url) {
@@ -137,7 +148,7 @@ const getFieldInfo = async (properties: Record<string, any >, name: string, cont
         id: user.id,
         name: user.name,
         avatar_url: user.avatar_url,
-        email: user.person?.email ?? null
+        email: user.person?.email ?? null,
       }));
     default:
       throw new Error(`Unknown type ${type}`);
@@ -167,19 +178,26 @@ const downloadImage = async (fileUrl: string, destination: string) => {
 };
 
 // Image management helper
-const manageImage = async (properties: { [key: string]: any }, url: string, contentType: string, name?: string) => {
+const manageImage = async (
+  properties: { [key: string]: any },
+  url: string,
+  contentType: string,
+  name?: string
+) => {
   const title = await getFieldInfo(properties, 'title', contentType);
 
-  const slug = await getFieldInfo(properties, 'slug', contentType) || slugify(title, {
-    lower: true,
-    strict: true,
-  });
+  const slug =
+    (await getFieldInfo(properties, 'slug', contentType)) ||
+    slugify(title, {
+      lower: true,
+      strict: true,
+    });
 
   if (!slug) {
     throw new Error('No slug');
   }
 
-  checkFolder("./public" + getImageFolder(contentType));
+  checkFolder('./public' + getImageFolder(contentType));
 
   const destination: string = getImageFolder(contentType) + name;
 
@@ -195,32 +213,36 @@ const checkFolder = (dir: string) => {
 
 const wget = (url: string, dest: string): Promise<void> => {
   return new Promise((resolve, reject) => {
-    https.get(url, (response) => {
-      const statusCode = response.statusCode;
-      const location = response.headers.location;
+    https
+      .get(url, (response) => {
+        const statusCode = response.statusCode;
+        const location = response.headers.location;
 
-      if (statusCode === 302 && location) {
-        console.log('redirecting to ', location);
-        // 遞歸下載重定向連結
-        wget(String(location), dest)
-          .then(resolve)
-          .catch(reject);
-      } else {
-        console.log('Downloading', url, 'to', dest);
-        const file = fs.createWriteStream(dest);
-        response.pipe(file);
-        file.on('finish', () => {
-          file.close();
-          resolve();
-        });
-      }
-    }).on('error', reject);
+        if (statusCode === 302 && location) {
+          console.log('redirecting to ', location);
+          // 遞歸下載重定向連結
+          wget(String(location), dest).then(resolve).catch(reject);
+        } else {
+          console.log('Downloading', url, 'to', dest);
+          const file = fs.createWriteStream(dest);
+          response.pipe(file);
+          file.on('finish', () => {
+            file.close();
+            resolve();
+          });
+        }
+      })
+      .on('error', reject);
   });
 };
 
 // Parse Notion page to object
 export const parseNotionPage = async (
-  page: PageObjectResponse | PartialPageObjectResponse | PartialDatabaseObjectResponse | DatabaseObjectResponse,
+  page:
+    | PageObjectResponse
+    | PartialPageObjectResponse
+    | PartialDatabaseObjectResponse
+    | DatabaseObjectResponse,
   contentType: string,
   debug = false
 ) => {
@@ -230,7 +252,7 @@ export const parseNotionPage = async (
   };
 
   if ('properties' in page) {
-    for (const field in (page.properties || {})) {
+    for (const field in page.properties || {}) {
       const value = await getFieldInfo(page.properties, field, contentType);
       if (value !== null && value !== undefined && !obj[field]) {
         obj[field] = value;
@@ -242,7 +264,12 @@ export const parseNotionPage = async (
 };
 
 // Get database data with pagination
-const getDatabase = async (notion: Client, database_id: string, contentType: string, debug = false) => {
+const getDatabase = async (
+  notion: Client,
+  database_id: string,
+  contentType: string,
+  debug = false
+) => {
   let hasMore = true;
   const ret = [];
 
@@ -275,7 +302,11 @@ const getDatabase = async (notion: Client, database_id: string, contentType: str
 };
 
 // Save file with frontmatter and markdown content
-const saveFile = async (frontMatter: { [key: string]: any }, type: string, languageField?: string) => {
+const saveFile = async (
+  frontMatter: { [key: string]: any },
+  type: string,
+  languageField?: string
+) => {
   if (!n2m || !notionClient) {
     throw new Error('Notion client not set');
   }
@@ -297,16 +328,20 @@ const saveFile = async (frontMatter: { [key: string]: any }, type: string, langu
     throw new Error(`No title or slug in front matter for ${notionId} of type ${type}`);
   }
 
-  const slug = frontMatter['slug'] || slugify(title, {
-    lower: true,
-    strict: true,
-  });
+  const slug =
+    frontMatter['slug'] ||
+    slugify(title, {
+      lower: true,
+      strict: true,
+    });
 
   frontMatter['slug'] = slug;
 
   const mdblocks = await n2m.pageToMarkdown(notionId);
 
-  const imageBlocks = mdblocks.filter((block) => block.type === 'image').map((block) => block.parent);
+  const imageBlocks = mdblocks
+    .filter((block) => block.type === 'image')
+    .map((block) => block.parent);
 
   const images = [];
 
@@ -339,7 +374,7 @@ const saveFile = async (frontMatter: { [key: string]: any }, type: string, langu
     images.push({
       src,
       url,
-      name
+      name,
     });
   }
 
@@ -397,13 +432,13 @@ export const parseNotion = async (
       console.error(`Got ${database.length} items from ${contentType} database`);
     }
 
-    console.log("checking " + contentRoot + '/' + contentType.toLowerCase());
+    console.log('checking ' + contentRoot + '/' + contentType.toLowerCase());
     checkFolder(contentRoot + '/' + contentType.toLowerCase());
 
     for (const page of database) {
       sleep(400);
 
-      for (const field of (type.filterFields || [])) {
+      for (const field of type.filterFields || []) {
         if (page[field]) {
           delete page[field];
         }
