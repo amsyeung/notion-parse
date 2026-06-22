@@ -1,7 +1,29 @@
 {
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "conventionalcommits",
+      "infile": "CHANGELOG.md",
+      "header": "# Changelog\nAll notable changes to this project will be documented in this file.\nSee the GitHub Releases page for detailed changelogs: https://github.com/amsyeung/notion-parse/releases\n\n",
+      "types": [
+        { "type": "feat", "section": "New Features" },
+        { "type": "fix", "section": "Bug Fixes" },
+        { "type": "chore", "section": "Internal & Build" },
+        { "type": "docs", "section": "Docs" },
+        { "type": "refactor", "section": "Refactor" }
+      ]
+    }
+  },
   "github": {
     "release": true,
-    "autoGenerate": true
+    "releaseNotes": {
+      "commit": "* ${commit.subject} (${sha}){ - thanks @${author.login}!}",
+      "excludeMatches": ["amsyeung"]
+    },
+    "comments": {
+      "submit": true,
+      "issue": ":rocket: _This issue has been resolved in v${version}. See [${releaseName}](${releaseUrl}) for release notes._",
+      "pr": ":rocket: _This pull request is included in v${version}. See [${releaseName}](${releaseUrl}) for release notes._"
+    }
   },
   "git": {
     "commitMessage": "chore: release v${version}",
