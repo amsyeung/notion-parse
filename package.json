@@ -5,11 +5,16 @@
   "description": "Convert Notion pages to Markdown with frontmatter",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
   "files": [
     "lib/",
     "package.json",
-    "README.md",
-    ".release-it.json"
+    "README.md"
   ],
   "scripts": {
     "build": "tsc",
