@@ -4,7 +4,7 @@ import {
   PageObjectResponse,
   PartialDatabaseObjectResponse,
   PartialPageObjectResponse,
-} from '@notionhq/client/build/src/api-endpoints';
+} from '@notionhq/client/build/src/api-endpoints.js';
 import { NotionToMarkdown } from 'notion-to-md';
 import {
   getFileFolder,
@@ -12,7 +12,7 @@ import {
   getImageFolder,
   getImageFolderPath,
   setRootFolder,
-} from './fileManagement';
+} from './fileManagement.js';
 
 import * as yaml from 'yaml';
 import * as fs from 'fs';
