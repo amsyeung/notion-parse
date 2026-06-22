@@ -1,6 +1,6 @@
 {
   "name": "@amsyn/notion-parse",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "description": "Convert Notion pages to Markdown with frontmatter",
   "main": "lib/index.js",
