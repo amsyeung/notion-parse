@@ -17,7 +17,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --verbose",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "lint": "eslint src/**/*.ts",
@@ -33,6 +33,7 @@
   "author": "Andy Yeung",
   "license": "MIT",
   "devDependencies": {
+    "@jest/globals": "^30.4.1",
     "@release-it/conventional-changelog": "^11.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.0",
