@@ -4,6 +4,12 @@ See the GitHub Releases page for detailed changelogs: https://github.com/amsyeun
 
 
 
+## [1.1.0](https://github.com/amsyeung/notion-parse/compare/v1.0.6...v1.1.0) (2026-07-16)
+
+### Features
+
+* support nextjs page.mdx ([806c6d5](https://github.com/amsyeung/notion-parse/commit/806c6d5dd656ca06c66e5ef8612f54437b1ead0f))
+
 ## [1.0.6](https://github.com/amsyeung/notion-parse/compare/v1.0.5...v1.0.6) (2026-06-22)
 
 ### Bug Fixes
