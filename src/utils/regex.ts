@@ -1,4 +1,4 @@
-import slugify from 'slugify';
+import { slugify } from "transliteration";
 
 const IMAGE_EXT_REG = /\.(jpg|jpeg|png|gif|webp|avif|tiff|bmp|svg)$/i;
 
@@ -60,5 +60,5 @@ export function sanitizeImageFilename(rawName: string): string {
  * Generate a clean, URL-safe slug from a string.
  */
 export function generateSlug(text: string): string {
-  return slugify(text, { lower: true, strict: true });
+  return slugify(text, { lowercase: true });
 }
